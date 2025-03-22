@@ -7,17 +7,17 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { chains, Chain } from "@/components/available-chains-tokens"
+import { chains } from "@/shared/constants/chains" // Updated import
 
-// Use CMC for chain icons
+// Use LiFi API for chain icons
 const getChainIcon = (chain: any) => {
-    return chain.cmcId ? `https://s2.coinmarketcap.com/static/img/coins/64x64/${chain.cmcId}.png` : "/fallback-icon.png";
-  };
+    return chain.logoURI || "/fallback-icon.png";
+};
 
 interface ChainSelectorProps {
-  selectedChain: Chain
-  onSelectChain: (chain: Chain) => void
-  zIndex?: number
+  selectedChain: any;
+  onSelectChain: (chain: any) => void;
+  zIndex?: number;
 }
 
 export default function ChainSelector({ selectedChain, onSelectChain, zIndex = 30 }: ChainSelectorProps) {
@@ -74,7 +74,7 @@ export default function ChainSelector({ selectedChain, onSelectChain, zIndex = 3
   )
 }
 
-function ChainItem({ chain, onSelect }: { chain: Chain, onSelect: () => void }) {
+function ChainItem({ chain, onSelect }: { chain: any, onSelect: () => void }) {
   return (
     <div 
       className="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer"

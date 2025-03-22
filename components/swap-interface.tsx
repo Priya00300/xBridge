@@ -1,174 +1,246 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowDown, Shield, Zap } from "lucide-react"
-import { useWallet } from "@/hooks/use-wallet"
-import TokenSelector from "@/components/token-selector"
-import ChainSelector from "@/components/chain-selector"
-import { chains, Chain } from "@/components/available-chains-tokens"
+import { useState, useEffect, useCallback } from "react";
+import { ArrowDown } from "lucide-react";
+import { useWallet } from "@/hooks/use-wallet";
+import TokenSelector from "@/components/token-selector";
+import ChainSelector from "@/components/chain-selector";
+import { chains } from "@/shared/constants/chains";
+import debounce from "lodash.debounce";
+import { parseUnits } from "ethers";
 
 export default function SwapInterface() {
-  const { isConnected, balance, address } = useWallet()
-  const [fromChain, setFromChain] = useState<Chain>(chains[0])
-  const [toChain, setToChain] = useState<Chain>(chains[1])
-  const [fromToken, setFromToken] = useState("ETH")
-  const [toToken, setToToken] = useState("ETH")
-  const [fromAmount, setFromAmount] = useState("")
-  const [toAmount, setToAmount] = useState("")
+  const { isConnected, balance, address } = useWallet();
+  const [fromChain, setFromChain] = useState<any>(chains[0]);
+  const [toChain, setToChain] = useState<any>(chains[1]);
+  const [fromToken, setFromToken] = useState<any>(null);
+  const [toToken, setToToken] = useState<any>(null);
+  const [fromAmount, setFromAmount] = useState<string>("");
+  const [toAmount, setToAmount] = useState<string>("");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [transactionFee, setTransactionFee] = useState<number | null>(null);
+  const [insufficientBalance, setInsufficientBalance] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fromChain || !toChain) return;
+
+    async function fetchTokens() {
+      try {
+        // Use the API route to avoid CORS issues
+        const response = await fetch("/api/lifi/tokens");
+        if (!response.ok) throw new Error("Failed to fetch tokens");
+        const data = await response.json();
+
+        const fromTokens = data.tokens[fromChain.id] || [];
+        const toTokens = data.tokens[toChain.id] || [];
+
+        setFromToken(fromTokens.find((token: any) => token.symbol === "ETH") || fromTokens[0]);
+        setToToken(toTokens.find((token: any) => token.symbol === "ETH") || toTokens[0]);
+      } catch (error) {
+        console.error("Error fetching tokens:", error);
+        setError("Failed to load tokens. Please try again later.");
+      }
+    }
+
+    fetchTokens();
+  }, [fromChain, toChain]);
+
+  // Debounced fetch function
+  const fetchSwapDetails = useCallback(
+    debounce(async () => {
+      if (!fromChain || !toChain || !fromToken || !toToken || !fromAmount || parseFloat(fromAmount) === 0) {
+        setToAmount("");
+        setExchangeRate(null);
+        setTransactionFee(null);
+        return;
+      }
+      
+      if (!address) {
+        console.error("Wallet not connected");
+        setError("Please connect your wallet first");
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Convert amount to Wei using the token's decimals
+        const amountInWei = parseUnits(fromAmount, fromToken.decimals).toString();
+
+        const response = await fetch(
+          `/api/lifi/quote?fromChain=${fromChain.id}&toChain=${toChain.id}&fromToken=${fromToken.address}&toToken=${toToken.address}&fromAmount=${amountInWei}&fromAddress=${address}`
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch quote");
+        }
+        
+        const data = await response.json();
+
+        // Process the response data
+        setToAmount(data.estimate?.toAmount ? parseFloat(data.estimate.toAmount).toFixed(6) : "0.000000");
+        
+        // Calculate exchange rate if both amounts are available
+        if (data.estimate?.toAmount && fromAmount) {
+          const rate = parseFloat(data.estimate.toAmount) / parseFloat(fromAmount);
+          setExchangeRate(rate);
+        } else {
+          setExchangeRate(null);
+        }
+        
+        // Extract fee information if available
+        setTransactionFee(data.estimate?.feeCosts?.[0]?.amountUSD 
+          ? parseFloat(data.estimate.feeCosts[0].amountUSD) 
+          : null);
+      } catch (error) {
+        console.error("Error fetching swap details:", error);
+        setError("Failed to get swap quote. Please try again.");
+        setToAmount("");
+        setExchangeRate(null);
+        setTransactionFee(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500),
+    [fromChain, toChain, fromToken, toToken, fromAmount, address]
+  );
+
+  useEffect(() => {
+    fetchSwapDetails();
+    
+    // Clear error when input changes
+    if (error) setError(null);
+  }, [fromAmount, fetchSwapDetails, error]);
+
+  // Validate balance
+  useEffect(() => {
+    if (!fromToken || !balance || !fromAmount) {
+      setInsufficientBalance(false);
+      return;
+    }
+
+    const userBalance = parseFloat(balance[fromToken.address] || "0");
+    const inputAmount = parseFloat(fromAmount);
+
+    setInsufficientBalance(inputAmount > userBalance);
+  }, [fromAmount, fromToken, balance]);
 
   const handleSwap = () => {
-    if (!isConnected) return
-    console.log("Swapping", fromAmount, fromToken, "from", fromChain.id, "to", toChain.id)
-  }
+    if (!isConnected || insufficientBalance || isLoading) return;
+    // Implement the actual swap functionality here
+    console.log("Swapping", fromAmount, fromToken?.symbol, "from", fromChain.name, "to", toChain.name);
+  };
 
-  const calculateToAmount = (amount: string) => {
-    if (!amount || isNaN(Number(amount))) return ""
-    return (Number.parseFloat(amount) * 0.9995).toFixed(7)
-  }
-
-  const handleFromAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setFromAmount(value)
-    setToAmount(calculateToAmount(value))
-  }
-
-  const formatAddress = (addr: string | undefined) => {
-    if (!addr) return ""
-    return `${addr.slice(0, 4)}...${addr.slice(-4)}`
-  }
-
-  // Swap the from and to chains and tokens
-  const handleSwapDirection = () => {
-    const tempChain = fromChain
-    setFromChain(toChain)
-    setToChain(tempChain)
-
-    const tempToken = fromToken
-    setFromToken(toToken)
-    setToToken(tempToken)
-
-    const tempAmount = fromAmount
-    setFromAmount(toAmount)
-    setToAmount(tempAmount)
-  }
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers and a single decimal point
+    const value = e.target.value;
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setFromAmount(value);
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 z-10">
       {/* From Section */}
       <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 font-medium">From</span>
-        </div>
-        
-        <ChainSelector 
-          selectedChain={fromChain} 
-          onSelectChain={setFromChain} 
-          zIndex={30}
-        />
-        
+        <ChainSelector selectedChain={fromChain} onSelectChain={setFromChain} zIndex={30} />
         <div className="flex justify-between items-end mb-1 mt-3">
           <input
             type="text"
             value={fromAmount}
-            onChange={handleFromAmountChange}
+            onChange={handleAmountChange}
             placeholder="0.001"
-            className="w-3/5 text-3xl bg-transparent outline-none"
+            className={`w-3/5 text-3xl bg-transparent outline-none ${insufficientBalance ? "text-red-500" : ""}`}
           />
           <TokenSelector
             selectedToken={fromToken}
             onSelectToken={setFromToken}
+            selectedChain={fromChain}
             isConnected={isConnected}
           />
         </div>
-        
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-500">${fromAmount ? (Number(fromAmount) * 1980).toFixed(2) : "1.98"}</span>
-          <div className="flex items-center">
-            <span className="text-gray-500 mr-2">Balance: {balance || "0.00202"}</span>
-            <button
-              onClick={() => {
-                if (balance) {
-                  setFromAmount(balance)
-                  setToAmount(calculateToAmount(balance))
-                }
-              }}
-              className="text-[#BE3144] font-medium"
-            >
-              MAX
-            </button>
-          </div>
-        </div>
+        {insufficientBalance && <p className="text-red-500 text-sm mt-1">Insufficient balance</p>}
       </div>
-      
-      {/* Arrow */}
+
+      {/* Swap Button */}
       <div className="flex justify-center -my-2 relative z-20">
-        <button 
-          onClick={handleSwapDirection}
+        <button
+          onClick={() => {
+            setFromChain(toChain);
+            setToChain(fromChain);
+            setFromToken(toToken);
+            setToToken(fromToken);
+            setFromAmount(toAmount);
+            setToAmount(fromAmount);
+          }}
           className="bg-white rounded-full p-2 shadow hover:shadow-md transition-shadow"
         >
           <ArrowDown size={20} className="text-gray-400" />
         </button>
       </div>
-      
+
       {/* To Section */}
       <div className="mb-4 mt-2">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 font-medium">To</span>
-          {/* <div className="flex items-center space-x-1">
-            <img src="WalletIcon" alt="Wallet" className="w-5 h-5" />
-            <span className="text-sm text-gray-500">{formatAddress(address)}</span>
-          </div> */}
-        </div>
-        
-        <ChainSelector 
-          selectedChain={toChain} 
-          onSelectChain={setToChain} 
-          zIndex={10}
-        />
-        
+        <ChainSelector selectedChain={toChain} onSelectChain={setToChain} zIndex={10} />
         <div className="flex justify-between items-end mb-1 mt-3">
-          <input
-            type="text"
-            value={toAmount}
-            readOnly
-            placeholder="0.0009995"
-            className="w-3/5 text-3xl bg-transparent outline-none"
+          <input 
+            type="text" 
+            value={isLoading ? "Loading..." : toAmount} 
+            readOnly 
+            placeholder="0.000000" 
+            className="w-3/5 text-3xl bg-transparent outline-none" 
           />
-          <TokenSelector
-            selectedToken={toToken}
-            onSelectToken={setToToken}
-            isConnected={isConnected}
+          <TokenSelector 
+            selectedToken={toToken} 
+            onSelectToken={setToToken} 
+            selectedChain={toChain} 
+            isConnected={isConnected} 
           />
-        </div>
-        
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-500">${toAmount ? (Number(toAmount) * 1980).toFixed(2) : "1.98"} (-0.04%)</span>
-          <span className="text-gray-500">Balance: 0.00009</span>
         </div>
       </div>
-      
-      {/* Exchange Rate */}
-      <div className="flex justify-between items-center text-sm text-gray-500 mb-4 mt-2">
-        <span>1 ETH = 0.99958 ETH</span>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center">
-            <Zap size={14} className="mr-1 text-green-500" />
-            <span>~ 2s</span>
-          </div>
-          <div className="flex items-center">
-            <Shield size={14} className="mr-1 text-blue-500" />
-            <span>&lt; $0.01</span>
-          </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">
+          {error}
         </div>
+      )}
+
+      {/* Live Calculation Details */}
+      <div className="text-sm text-gray-500 mb-4">
+        {fromAmount && fromToken && (
+          <p>
+            You entered: <span className="font-medium">{fromAmount} {fromToken?.symbol}</span>
+          </p>
+        )}
+        {exchangeRate && fromToken && toToken && (
+          <p>
+            1 {fromToken?.symbol} ≈ {exchangeRate.toFixed(6)} {toToken?.symbol}
+          </p>
+        )}
+        {transactionFee !== null && (
+          <p>
+            Estimated Fee: <span className="font-medium">${transactionFee.toFixed(4)}</span>
+          </p>
+        )}
       </div>
-      
+
       {/* Swap Button */}
       <button
         onClick={handleSwap}
-        className="w-full bg-[#BE3144] text-white py-3 rounded-lg font-medium hover:bg-[#c33e50] transition-colors"
+        className={`w-full py-3 rounded-lg font-medium transition-colors ${
+          !isConnected || insufficientBalance || isLoading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-[#BE3144] text-white hover:bg-[#c33e50]"
+        }`}
+        disabled={!isConnected || insufficientBalance || isLoading}
       >
-        Swap
+        {isLoading ? "Loading..." : insufficientBalance ? "Insufficient Balance" : "Swap"}
       </button>
     </div>
-  )
+  );
 }

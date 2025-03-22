@@ -49,8 +49,11 @@
     "cmdk": "1.0.4",
     "date-fns": "^2.28.0",
     "embla-carousel-react": "8.5.1",
+    "ethers": "6.13.5",
     "framer-motion": "latest",
+    "http-proxy-middleware": "3.0.3",
     "input-otp": "1.4.1",
+    "lodash.debounce": "4.0.8",
     "lucide-react": "^0.454.0",
     "my-bridge": "file:",
     "next": "^15.2.3",
@@ -70,12 +73,15 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22",
+    "@types/lodash.debounce": "4.0.9",
+    "@types/node": "22.13.11",
     "@types/react": "19.0.12",
     "@types/react-dom": "19.0.4",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "ts-node": "10.9.2",
+    "tsx": "4.19.3",
+    "typescript": "5.8.2"
   },
   "overrides": {
     "react": "$react",
