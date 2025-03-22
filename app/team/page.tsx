@@ -3,28 +3,40 @@ import { Github, Linkedin, Twitter } from "lucide-react"
 
 const teamMembers = [
   {
-    name: "Alex Johnson",
-    role: "Founder & CEO",
-    bio: "Blockchain enthusiast with 10+ years in fintech. Previously at Coinbase and Ripple.",
-    image: "/placeholder.svg?height=200&width=200",
+    name: "Priya Saxena",
+    role: "Smart Contracts Developer",
+    bio: "Specializes in smart contracts and Li-Fi API integration, ensuring secure, efficient cross-chain transactions with optimized liquidity and minimal slippage.",
+    image: "/images/priya.jpg",
+    linkedin: "https://www.linkedin.com/in/priya-saxena-a39638297 ",
+    github: "https://github.com/Priya00300",
+    twitter: "https://twitter.com/priyasaxena",
   },
   {
-    name: "Sarah Chen",
-    role: "CTO",
-    bio: "Former lead developer at Ethereum Foundation. Expert in smart contract security and cross-chain protocols.",
-    image: "/placeholder.svg?height=200&width=200",
+    name: "Shyam Jaiswal",
+    role: "Smart Contracts Developer",
+    bio: "Focuses on smart contracts and Li-Fi API integration, enhancing cross-chain swaps with secure, efficient, and cost-effective transactions.",
+    image: "/images/shyam.jpg",
+    linkedin: "https://www.linkedin.com/in/jaiswalism?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app",
+    github: "https://github.com/jaiswalism",
+    twitter: "https://x.com/NovaLynx7?t=wPs1cfbYwA-BOYa5WKGR6w&s=09",
   },
   {
-    name: "Michael Rodriguez",
-    role: "Head of Product",
-    bio: "Product leader with experience at top DeFi projects. Passionate about creating intuitive user experiences.",
-    image: "/placeholder.svg?height=200&width=200",
+    name: "Priyanshi Singh",
+    role: "Backend Developer",
+    bio: "Focuses on building and optimizing the backend to handle real-time transactions, security protocols, making xBridge a robust and scalable platform.",
+    image: "/images/priyanshi.jpg",
+    linkedin: "https://www.linkedin.com/in/priyanshi-singh-230241287/",
+    github: "https://github.com/",
+    twitter: "https://twitter.com/priyanshisingh",
   },
   {
-    name: "Priya Patel",
-    role: "Lead Engineer",
-    bio: "Full-stack developer specializing in blockchain infrastructure. Contributor to multiple open-source projects.",
-    image: "/placeholder.svg?height=200&width=200",
+    name: "Vaishnavi Mishra",
+    role: "Frontend Developer",
+    bio: "Focuses on user experience and interface design, ensuring xBridge is accessible to both novice and experienced users.",
+    image: "/images/vaishnavi.jpg",
+    linkedin: "https://www.linkedin.com/in/vaishnavi-mishra-386935296/",
+    github: "https://github.com/gensine",
+    twitter: "https://x.com/0xVaishnavii",
   },
 ]
 
@@ -52,15 +64,21 @@ export default function TeamPage() {
               <p className="text-[#BE3144] mb-3">{member.role}</p>
               <p className="text-sm text-center mb-4">{member.bio}</p>
               <div className="flex space-x-3 mt-auto">
-                <a href="#" className="text-white/70 hover:text-white">
-                  <Twitter size={18} />
-                </a>
-                <a href="#" className="text-white/70 hover:text-white">
-                  <Linkedin size={18} />
-                </a>
-                <a href="#" className="text-white/70 hover:text-white">
-                  <Github size={18} />
-                </a>
+                {member.twitter && (
+                  <a href={member.twitter} target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white">
+                    <Twitter size={18} />
+                  </a>
+                )}
+                {member.linkedin && (
+                  <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white">
+                    <Linkedin size={18} />
+                  </a>
+                )}
+                {member.github && (
+                  <a href={member.github} target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white">
+                    <Github size={18} />
+                  </a>
+                )}
               </div>
             </div>
           ))}
@@ -68,5 +86,4 @@ export default function TeamPage() {
       </div>
     </main>
   )
-}
-
+}  

@@ -118,8 +118,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-medium">Email</h3>
-                    <p className="text-white/70">support@xbridge.io</p>
-                    <p className="text-white/70">info@xbridge.io</p>
+                    <p className="text-white/70">shyamjaiswal9892@gmail.com</p>
+                    <p className="text-white/70">https://x.com/NovaLynx7?t=wPs1cfbYwA-BOYa5WKGR6w&s=09</p>
                   </div>
                 </div>
 
@@ -129,8 +129,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-medium">Office</h3>
-                    <p className="text-white/70">123 Blockchain Street</p>
-                    <p className="text-white/70">San Francisco, CA 94103</p>
+                    <p className="text-white/70">SRM UNIVERSITY</p>
+                    <p className="text-white/70">SRM INSTITUTE OF SCIENCE AND TECHNOLOGY,KTR CHENNAI,INDIA</p>
                   </div>
                 </div>
 
@@ -140,7 +140,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-medium">Phone</h3>
-                    <p className="text-white/70">+1 (555) 123-4567</p>
+                    <p className="text-white/70">(91+) 6386061984</p>
                   </div>
                 </div>
               </div>
