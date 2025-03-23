@@ -7,7 +7,7 @@ import TokenSelector from "@/components/token-selector";
 import ChainSelector from "@/components/chain-selector";
 import { chains } from "@/shared/constants/chains";
 import debounce from "lodash.debounce";
-import { parseUnits } from "ethers";
+import { parseUnits, formatUnits } from "ethers";
 import { useXBridgeRegistry } from "@/hooks/use-xbridge-registry";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,12 +87,15 @@ export default function SwapInterface() {
         
         const data = await response.json();
 
-        // Process the response data
-        setToAmount(data.estimate?.toAmount ? parseFloat(data.estimate.toAmount).toFixed(6) : "0.000000");
+        // Process the response data - FIXED: Properly format toAmount using formatUnits
+        setToAmount(data.estimate?.toAmount 
+          ? parseFloat(formatUnits(data.estimate.toAmount, toToken.decimals)).toFixed(6) 
+          : "0.000000");
         
         // Calculate exchange rate if both amounts are available
         if (data.estimate?.toAmount && fromAmount) {
-          const rate = parseFloat(data.estimate.toAmount) / parseFloat(fromAmount);
+          const toAmountFormatted = parseFloat(formatUnits(data.estimate.toAmount, toToken.decimals));
+          const rate = toAmountFormatted / parseFloat(fromAmount);
           setExchangeRate(rate);
         } else {
           setExchangeRate(null);
