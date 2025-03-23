@@ -1,0 +1,77 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "D:\\Synthify\\xBridge\\contracts\\Lock.sol": {
+      "lastModificationDate": 1742693277592,
+      "contentHash": "7eee587c347fe6b1de50c96688cb9477",
+      "sourceName": "contracts/Lock.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.28"
+      ],
+      "artifacts": [
+        "Lock"
+      ]
+    },
+    "D:\\Synthify\\xBridge\\contracts\\XBridgeRegistry.sol": {
+      "lastModificationDate": 1742694031367,
+      "contentHash": "29485d8b447c0d95de17b39be9b28f70",
+      "sourceName": "contracts/XBridgeRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.17"
+      ],
+      "artifacts": [
+        "XBridgeRegistry"
+      ]
+    }
+  }
+}

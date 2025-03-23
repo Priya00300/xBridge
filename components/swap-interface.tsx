@@ -8,9 +8,14 @@ import ChainSelector from "@/components/chain-selector";
 import { chains } from "@/shared/constants/chains";
 import debounce from "lodash.debounce";
 import { parseUnits } from "ethers";
+import { useXBridgeRegistry } from "@/hooks/use-xbridge-registry";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SwapInterface() {
   const { isConnected, balance, address } = useWallet();
+  const { registerTransaction } = useXBridgeRegistry();
+  const { toast } = useToast();
+  
   const [fromChain, setFromChain] = useState<any>(chains[0]);
   const [toChain, setToChain] = useState<any>(chains[1]);
   const [fromToken, setFromToken] = useState<any>(null);
@@ -21,6 +26,7 @@ export default function SwapInterface() {
   const [transactionFee, setTransactionFee] = useState<number | null>(null);
   const [insufficientBalance, setInsufficientBalance] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -129,10 +135,78 @@ export default function SwapInterface() {
     setInsufficientBalance(inputAmount > userBalance);
   }, [fromAmount, fromToken, balance]);
 
-  const handleSwap = () => {
-    if (!isConnected || insufficientBalance || isLoading) return;
-    // Implement the actual swap functionality here
-    console.log("Swapping", fromAmount, fromToken?.symbol, "from", fromChain.name, "to", toChain.name);
+  const handleSwap = async () => {
+    if (!isConnected || insufficientBalance || isLoading || isSwapping) return;
+    
+    setIsSwapping(true);
+    setError(null);
+    
+    try {
+      console.log("Swapping", fromAmount, fromToken?.symbol, "from", fromChain.name, "to", toChain.name);
+      
+      // Perform the actual swap here using the Li.Fi API
+      const amountInWei = parseUnits(fromAmount, fromToken.decimals).toString();
+      
+      const response = await fetch(
+        `/api/lifi/swap?fromChain=${fromChain.id}&toChain=${toChain.id}&fromToken=${fromToken.address}&toToken=${toToken.address}&fromAmount=${amountInWei}&fromAddress=${address}`
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to execute swap");
+      }
+      
+      const swapData = await response.json();
+      
+      // Get the transaction hash from the response
+      const txHash = swapData.transactionHash || swapData.hash || swapData.txHash;
+      
+      if (!txHash) {
+        throw new Error("No transaction hash returned from swap");
+      }
+      
+      // Register the transaction with Educhain
+      const txId = await registerTransaction(
+        fromChain.name,
+        toChain.name,
+        fromToken.symbol,
+        toToken.symbol,
+        fromAmount,
+        toAmount || "0",
+        txHash
+      );
+      
+      if (txId) {
+        toast({
+          title: "Transaction Recorded",
+          description: txId === "pending" 
+            ? "Your transaction will be recorded on Educhain when you connect to that network"
+            : "Your transaction has been recorded on Educhain for transparency",
+        });
+      }
+      
+      // Show success message
+      toast({
+        title: "Swap Successful",
+        description: `Successfully swapped ${fromAmount} ${fromToken.symbol} to approximately ${toAmount} ${toToken.symbol}`,
+      });
+      
+      // Reset form
+      setFromAmount("");
+      setToAmount("");
+      
+    } catch (error: any) {
+      console.error("Error during swap:", error);
+      setError(error.message || "Failed to complete the swap");
+      
+      toast({
+        title: "Swap Failed",
+        description: error.message || "Failed to complete the swap",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSwapping(false);
+    }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,13 +307,19 @@ export default function SwapInterface() {
       <button
         onClick={handleSwap}
         className={`w-full py-3 rounded-lg font-medium transition-colors ${
-          !isConnected || insufficientBalance || isLoading
+          !isConnected || insufficientBalance || isLoading || isSwapping
             ? "bg-gray-400 cursor-not-allowed"
             : "bg-[#BE3144] text-white hover:bg-[#c33e50]"
         }`}
-        disabled={!isConnected || insufficientBalance || isLoading}
+        disabled={!isConnected || insufficientBalance || isLoading || isSwapping}
       >
-        {isLoading ? "Loading..." : insufficientBalance ? "Insufficient Balance" : "Swap"}
+        {isLoading
+          ? "Loading..."
+          : isSwapping
+          ? "Processing..."
+          : insufficientBalance
+          ? "Insufficient Balance"
+          : "Swap"}
       </button>
     </div>
   );
